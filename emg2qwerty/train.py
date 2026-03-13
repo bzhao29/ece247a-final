@@ -107,10 +107,10 @@ def main(config: DictConfig):
         trainer.fit(module, datamodule, ckpt_path=resume_from_checkpoint)
 
         # Load best checkpoint
-        module = module.load_from_checkpoint(
-            trainer.checkpoint_callback.best_model_path
-        )
-
+        best_ckpt = trainer.checkpoint_callback.best_model_path
+        module = module.load_from_checkpoint(best_ckpt)
+    else:
+        best_ckpt = config.checkpoint
     # Validate and test on the best checkpoint (if training), or on the
     # loaded `config.checkpoint` (otherwise)
     val_metrics = trainer.validate(module, datamodule)

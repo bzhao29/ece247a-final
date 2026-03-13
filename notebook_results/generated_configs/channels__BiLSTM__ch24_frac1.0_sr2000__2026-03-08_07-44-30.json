@@ -1,0 +1,13 @@
+{
+  "group": "channels",
+  "model_type": "BiLSTM",
+  "preprocessing": "best_found",
+  "augmentation": "best_found",
+  "num_channels": 24,
+  "train_fraction": 1.0,
+  "sampling_rate": 2000,
+  "epochs": 15,
+  "seed": 42,
+  "notes": "Channel ablation with 24 channels",
+  "extra_overrides": {}
+}

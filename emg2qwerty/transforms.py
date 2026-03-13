@@ -243,3 +243,70 @@ class SpecAugment:
 
         # (..., C, freq, T) -> (T, ..., C, freq)
         return x.movedim(-1, 0)
+
+class SelectEMGChannels:
+    def __init__(self, num_channels_total: int):
+        self.num_channels_total = num_channels_total
+
+    def __call__(self, sample):
+        left = sample["emg_left"]
+        right = sample["emg_right"]
+
+        left_total = left.shape[-1]
+        right_total = right.shape[-1]
+        total = left_total + right_total
+
+        if self.num_channels_total > total:
+            raise ValueError(
+                f"Requested {self.num_channels_total} channels but only {total} exist."
+            )
+
+        left_keep = min(left_total, self.num_channels_total // 2)
+        right_keep = min(right_total, self.num_channels_total - left_keep)
+
+        used = left_keep + right_keep
+        remaining = self.num_channels_total - used
+
+        if remaining > 0:
+            extra_left = min(remaining, left_total - left_keep)
+            left_keep += extra_left
+            remaining -= extra_left
+
+        if remaining > 0:
+            extra_right = min(remaining, right_total - right_keep)
+            right_keep += extra_right
+
+        # structured row case
+        if hasattr(sample, "dtype") and getattr(sample.dtype, "names", None) is not None:
+            out = {name: sample[name] for name in sample.dtype.names}
+        else:
+            out = dict(sample)
+
+        out["emg_left"] = left[..., :left_keep].copy()
+        out["emg_right"] = right[..., :right_keep].copy()
+        return out
+
+class DownsampleEMG:
+    def __init__(self, factor: int = 1):
+        if factor < 1:
+            raise ValueError(f"factor must be >= 1, got {factor}")
+        self.factor = factor
+        self._printed = False
+
+    def __call__(self, x):
+        if self.factor == 1:
+            if not self._printed:
+                print(f"[DownsampleEMG] factor={self.factor} (no downsampling)")
+                self._printed = True
+            return x
+
+        x_ds = x[::self.factor, ...]
+
+        if not self._printed:
+            print(
+                f"[DownsampleEMG] factor={self.factor} | "
+                f"{tuple(x.shape)} -> {tuple(x_ds.shape)}"
+            )
+            self._printed = True
+
+        return x_ds

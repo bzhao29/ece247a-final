@@ -1,0 +1,35 @@
+# @package _global_
+
+channel_select:
+  _target_: emg2qwerty.transforms.SelectEMGChannels
+  num_channels_total: 32
+
+module:
+  _target_: emg2qwerty.tds_gru_module.TDSGRUCTCModule
+  in_features: 528
+  mlp_features: [384]
+  block_channels: [24, 24, 24, 24]
+  kernel_width: 32
+  hidden_size: 384
+  num_layers: 3
+  dropout: 0.15
+  bidirectional: true
+  electrode_channels: 16
+
+datamodule:
+  _target_: emg2qwerty.lightning.WindowedEMGDataModule
+  window_length: 8000
+  padding: [1800, 200]
+
+transforms:
+  train:
+    - ${channel_select}
+    - ${to_tensor}
+    - ${band_rotation}
+    - ${temporal_jitter}
+    - ${logspec}
+  val:
+    - ${channel_select}
+    - ${to_tensor}
+    - ${logspec}
+  test: ${transforms.val}

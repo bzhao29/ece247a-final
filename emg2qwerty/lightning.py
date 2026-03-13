@@ -42,6 +42,7 @@ class WindowedEMGDataModule(pl.LightningDataModule):
         train_transform: Transform[np.ndarray, torch.Tensor],
         val_transform: Transform[np.ndarray, torch.Tensor],
         test_transform: Transform[np.ndarray, torch.Tensor],
+        train_fraction: float = 1.0,
     ) -> None:
         super().__init__()
 
@@ -59,6 +60,8 @@ class WindowedEMGDataModule(pl.LightningDataModule):
         self.val_transform = val_transform
         self.test_transform = test_transform
 
+        self.train_fraction = train_fraction
+
     def setup(self, stage: str | None = None) -> None:
         self.train_dataset = ConcatDataset(
             [
@@ -72,6 +75,16 @@ class WindowedEMGDataModule(pl.LightningDataModule):
                 for hdf5_path in self.train_sessions
             ]
         )
+
+        if self.train_fraction < 1.0:
+            total = len(self.train_dataset)
+            subset_size = int(total * self.train_fraction)
+        
+            indices = np.random.permutation(total)[:subset_size]
+            self.train_dataset = torch.utils.data.Subset(self.train_dataset, indices)
+        
+            print(f"Using {subset_size}/{total} training samples ({self.train_fraction*100:.1f}%)")
+            
         self.val_dataset = ConcatDataset(
             [
                 WindowedEMGDataset(
@@ -107,7 +120,7 @@ class WindowedEMGDataModule(pl.LightningDataModule):
             num_workers=self.num_workers,
             collate_fn=WindowedEMGDataset.collate,
             pin_memory=True,
-            persistent_workers=True,
+            persistent_workers=self.num_workers > 0,
         )
 
     def val_dataloader(self) -> DataLoader:
@@ -118,7 +131,7 @@ class WindowedEMGDataModule(pl.LightningDataModule):
             num_workers=self.num_workers,
             collate_fn=WindowedEMGDataset.collate,
             pin_memory=True,
-            persistent_workers=True,
+            persistent_workers=self.num_workers > 0,
         )
 
     def test_dataloader(self) -> DataLoader:
@@ -133,7 +146,7 @@ class WindowedEMGDataModule(pl.LightningDataModule):
             num_workers=self.num_workers,
             collate_fn=WindowedEMGDataset.collate,
             pin_memory=True,
-            persistent_workers=True,
+            persistent_workers=self.num_workers > 0,
         )
 
 

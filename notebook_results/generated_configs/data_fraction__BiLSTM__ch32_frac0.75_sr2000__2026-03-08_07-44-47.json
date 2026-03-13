@@ -1,0 +1,13 @@
+{
+  "group": "data_fraction",
+  "model_type": "BiLSTM",
+  "preprocessing": "best_found",
+  "augmentation": "best_found",
+  "num_channels": 32,
+  "train_fraction": 0.75,
+  "sampling_rate": 2000,
+  "epochs": 15,
+  "seed": 42,
+  "notes": "Training fraction = 0.75",
+  "extra_overrides": {}
+}

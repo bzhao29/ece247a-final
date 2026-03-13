@@ -1,0 +1,13 @@
+{
+  "group": "augmentation",
+  "model_type": "BiLSTM",
+  "preprocessing": "zscore_per_channel",
+  "augmentation": "channel_dropout",
+  "num_channels": 32,
+  "train_fraction": 1.0,
+  "sampling_rate": 2000,
+  "epochs": 15,
+  "seed": 42,
+  "notes": "Drop some channels randomly",
+  "extra_overrides": {}
+}
